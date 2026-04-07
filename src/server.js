@@ -271,6 +271,14 @@ ${knowledgeSection}
 `;
 }
 
+app.get('/', (_, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'), (err) => {
+    if (err) {
+      res.status(200).json({ ok: true, service: 'gptgridx-closer-api', message: 'API is live. UI file not found in deployment root.' });
+    }
+  });
+});
+
 app.get('/health', (_, res) => {
   res.json({ ok: true, service: 'gptgridx-closer-api' });
 });
