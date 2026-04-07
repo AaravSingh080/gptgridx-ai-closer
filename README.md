@@ -42,3 +42,18 @@ Open: `http://localhost:3000`
 ## Which backend should you use now?
 - If you're still building UI quickly: use `server.js`
 - If you want lead alerts + Sheets + richer GPTGRIDX logic: switch to `src/server.js`
+
+## Google Sheets without Google Cloud billing (Option A)
+
+Use Google Apps Script webhook with the advanced backend:
+
+1. Create a Google Sheet.
+2. Open Extensions -> Apps Script and add a `doPost(e)` handler that appends incoming JSON to rows.
+3. Deploy as Web App and copy URL.
+4. Put URL in `.env`:
+
+```
+GOOGLE_APPS_SCRIPT_WEBHOOK_URL=https://script.google.com/macros/s/.../exec
+```
+
+When this variable is set, `src/server.js` logs leads through the webhook and skips service-account Sheets logging.
