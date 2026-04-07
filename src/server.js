@@ -7,6 +7,9 @@ import cors from 'cors';
 import OpenAI from 'openai';
 import { google } from 'googleapis';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const allowedOrigins = (process.env.CORS_ALLOW_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000').split(',').map((v) => v.trim()).filter(Boolean);
 
@@ -26,8 +29,6 @@ app.use(express.static(path.join(__dirname, '..')));
 const PORT = Number(process.env.PORT || 3000);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const sessions = new Map();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const KNOWLEDGE_FILE_PATH = process.env.KNOWLEDGE_FILE_PATH || path.join(__dirname, '..', 'knowledge', 'brand-knowledge.md');
 
 const PACKAGES = [
