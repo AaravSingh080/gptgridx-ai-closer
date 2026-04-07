@@ -21,6 +21,7 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, '..')));
 
 const PORT = Number(process.env.PORT || 3000);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -179,6 +180,32 @@ async function sendSmsAlert(lead, sessionId) {
   return { skipped: false };
 }
 
+
+async function logToAppsScriptWebhook(lead, sessionId, stage) {
+  const webhookUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL;
+  if (!webhookUrl) return false;
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      timestamp: new Date().toISOString(),
+      sessionId,
+      name: lead.name || '',
+      phone: lead.phone || '',
+      painPoint: lead.painPoint || '',
+      stage
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Apps Script logging failed: ${response.status} ${errText}`);
+  }
+
+  return true;
+}
+
 async function logToGoogleSheets(lead, sessionId, stage) {
   if (!process.env.GOOGLE_SHEETS_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) return;
 
@@ -288,7 +315,12 @@ app.post('/api/chat', async (req, res) => {
   if (readyLead && !session.lead.smsSent) {
     await Promise.allSettled([
       sendSmsAlert(session.lead, sessionId),
-      logToGoogleSheets(session.lead, sessionId, session.stage)
+      (async () => {
+        const webhookLogged = await logToAppsScriptWebhook(session.lead, sessionId, session.stage);
+        if (!webhookLogged) {
+          await logToGoogleSheets(session.lead, sessionId, session.stage);
+        }
+      })()
     ]);
     session.lead.smsSent = true;
   }
